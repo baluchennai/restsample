@@ -46,7 +46,7 @@ public class CacheController {
 	 */
 	@RequestMapping(value = "cache1/{name}", method = RequestMethod.GET, produces = "application/json")
 	public ResponseEntity<String> getName1(HttpServletResponse response, @PathVariable String name) {
-
+	
 		String headerValue = CacheControl.maxAge(30, TimeUnit.SECONDS).getHeaderValue();
 		response.addHeader("Cache-Control", headerValue);
 
@@ -65,12 +65,17 @@ public class CacheController {
 	 */
 	@RequestMapping(value = "cache2/{name}", method = RequestMethod.GET, produces = "application/json")
 	public ResponseEntity<String> getName2(WebRequest webRequest, @PathVariable String name) {
+		
+		// 1. Do application specific log to generate eTag (with datemodified)
 
 		if (webRequest.checkNotModified(getETag(name))) {
+			//2. Verify eTag
 			System.out.println("ETag Verified....");
+			//3. Returns HTTP 304 Not Modified Response
 			return null;
 		}
 
+		//4. Continue with further processing if eTag match fails
 		System.out.println("ETag not verified, building Response...");
 
 		return new ResponseEntity<>(HttpStatus.OK);
