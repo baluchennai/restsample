@@ -2,6 +2,7 @@ package com.test.rest.controller;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
 
@@ -39,14 +40,16 @@ public class CacheController {
 	 * Method that sets return response based on simple 'Cache-Control'
 	 * settings. 'Cache-Control' is enabled for 'x' amount of time and expiry is
 	 * automatically handled by browser and server code. Note: Doing (F5) will
-	 * make a fresh call. TBD: How to simulate using Postman?
+	 * make a fresh call. 
+	 * PostMan Testing Hit: Remove default 'Cache-Control' property from Postman Settings. 
 	 * 
 	 * @param name input name
 	 * @return
 	 */
 	@RequestMapping(value = "cache1/{name}", method = RequestMethod.GET, produces = "application/json")
 	public ResponseEntity<String> getName1(HttpServletResponse response, @PathVariable String name) {
-	
+		System.out.println("Cache method invoked......"+LocalTime.now());
+
 		String headerValue = CacheControl.maxAge(30, TimeUnit.SECONDS).getHeaderValue();
 		response.addHeader("Cache-Control", headerValue);
 
@@ -56,26 +59,28 @@ public class CacheController {
 	/**
 	 * Method handles cache based on 'ETag'. ETag is checked every time to see
 	 * if it matches internal logic, if matched, further calculations and logics
-	 * are not executed. Also, returns response status code would be 'HTT 304
-	 * Not Modified' Note: No expiry/cache duration attached to Response.
+	 * are not executed. Also, returns response status code would be 'HTTP 304
+	 * Not Modified'.
+	 * <p>
+	 * <u>Note</u>: 
+	 * <ul>1. No expiry/cache duration attached to Response.</ul>
+	 * <ul>2. ETag can completely be left to browser to handle ('Cache-Control: no cache' should not be sent )
+	 * without any change in GUI code, HTTP 304 will not be returne.d</ul>
+	 * <ul>3. With the help of 'if-None-Match' (ETag value to be matched) 
+	 * client code can get HTTP 304 status in case of no modification.</ul>
 	 * 
-	 * @param webRequest provides metadata informatation
+	 * @param webRequest provides metadata information
 	 * @param name input name
 	 * @return
 	 */
 	@RequestMapping(value = "cache2/{name}", method = RequestMethod.GET, produces = "application/json")
 	public ResponseEntity<String> getName2(WebRequest webRequest, @PathVariable String name) {
-		
-		// 1. Do application specific log to generate eTag (with datemodified)
 
 		if (webRequest.checkNotModified(getETag(name))) {
-			//2. Verify eTag
 			System.out.println("ETag Verified....");
-			//3. Returns HTTP 304 Not Modified Response
 			return null;
 		}
 
-		//4. Continue with further processing if eTag match fails
 		System.out.println("ETag not verified, building Response...");
 
 		return new ResponseEntity<>(HttpStatus.OK);
@@ -87,7 +92,7 @@ public class CacheController {
 	 * are not executed ie., the body part will not be build/returned. Also,
 	 * returns response status code would be 'HTT 304 Not Modified' Note:
 	 * Request header should have 'If-None-Match' matching to 'eTag'.
-	 * Note: 'Cache-Control' has no meaning here, as we only bothere about eTag.
+	 * Note: 'Cache-Control' has no meaning here, as we only bother about eTag.
 	 * 
 	 * @param name
 	 * @return
@@ -108,7 +113,7 @@ public class CacheController {
 	 * returns response status code would be 'HTT 304 Not Modified' Note:
 	 * Request header should have 'If-None-Match' matching to 'eTag'.
 	 * 
-	 * @param webRequest provides metadata informatation
+	 * @param webRequest provides metadata information
 	 * @param name input name
 	 * @return
 	 */
